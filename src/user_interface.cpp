@@ -22,9 +22,6 @@ void UserInterface::touchpad_read(lv_indev_drv_t *indev_driver, lv_indev_data_t 
     int touchPosition[2] = {0, 0};
     int touched = ft6236_pos(touchPosition);
 
-    // uint16_t touchX, touchY;
-    // bool touched = lcd.getTouch(&touchX, &touchY);
-
     if (touched == 1)
     {
         int touch_x = touchPosition[1];
@@ -49,7 +46,7 @@ void UserInterface::touchpad_read(lv_indev_drv_t *indev_driver, lv_indev_data_t 
     }
 }
 
-void UserInterface::setup_lovyan_GFX()
+void UserInterface::setup_lvgl()
 {
     String LVGL_Version = "Setting up LVGL, ";
     LVGL_Version += String('V') + lv_version_major() + "." + lv_version_minor() + "." + lv_version_patch();
@@ -79,7 +76,7 @@ void UserInterface::setup_lovyan_GFX()
     Serial.println("Completed setting up LVGL");
 }
 
-void UserInterface::setup_graphics()
+void UserInterface::setup_lovyan_GFX()
 {
     Serial.println("Setting up LovyanGFX");
 

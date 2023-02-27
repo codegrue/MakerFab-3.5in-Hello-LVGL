@@ -12,6 +12,6 @@ namespace UserInterface
 {
     void display_flush(lv_disp_drv_t *disp, const lv_area_t *area, lv_color_t *color_p);
     void touchpad_read(lv_indev_drv_t *indev_driver, lv_indev_data_t *data);
-    void setup_graphics();
+    void setup_lvgl();
     void setup_lovyan_GFX();
 }

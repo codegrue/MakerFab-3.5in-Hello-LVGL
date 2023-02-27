@@ -43,8 +43,8 @@ void setup(void)
 {
   Serial.begin(9800);
 
-  UserInterface::setup_graphics();
   UserInterface::setup_lovyan_GFX();
+  UserInterface::setup_lvgl();
 
   auto screen = lv_scr_act();
   lv_obj_set_style_bg_color(screen, lv_color_hex(0x008888), LV_PART_MAIN);
