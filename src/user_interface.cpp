@@ -8,6 +8,15 @@ void UserInterface::display_flush(lv_disp_drv_t *disp, const lv_area_t *area, lv
     uint32_t w = (area->x2 - area->x1 + 1);
     uint32_t h = (area->y2 - area->y1 + 1);
 
+    // Serial.print("rea->x1 = ");
+    // Serial.println(area->x1);
+    // Serial.print("rea->x2 = ");
+    // Serial.println(area->x2);
+    // Serial.print("rea->y1 = ");
+    // Serial.println(area->y1);
+    // Serial.print("rea->y2 = ");
+    // Serial.println(area->y2);
+
     lcd.startWrite();
     lcd.setAddrWindow(area->x1, area->y1, w, h);
     lcd.writePixels((uint16_t *)&color_p->full, w * h, true);
