@@ -28,16 +28,15 @@ Notes:
 #include <Arduino.h>
 #include <LVGL.h>
 
+#include "graphics.h"
 #include "user_interface.h"
-
-
 
 void setup(void)
 {
   Serial.begin(9800);
 
-  UserInterface::setup_lovyan_GFX();
-  UserInterface::setup_lvgl();
+  Graphics::setup_lovyan_GFX();
+  Graphics::setup_lvgl();
 
   UserInterface::setup_ui();
 }
