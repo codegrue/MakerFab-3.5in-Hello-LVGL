@@ -2,20 +2,15 @@
 
 LGFX lcd;
 
+static int counter = 0;
+lv_obj_t *counterLabel;
+lv_obj_t *led1;
+
 /*** Display callback to flush the buffer to screen ***/
 void UserInterface::display_flush(lv_disp_drv_t *disp, const lv_area_t *area, lv_color_t *color_p)
 {
     uint32_t w = (area->x2 - area->x1 + 1);
     uint32_t h = (area->y2 - area->y1 + 1);
-
-    // Serial.print("rea->x1 = ");
-    // Serial.println(area->x1);
-    // Serial.print("rea->x2 = ");
-    // Serial.println(area->x2);
-    // Serial.print("rea->y1 = ");
-    // Serial.println(area->y1);
-    // Serial.print("rea->y2 = ");
-    // Serial.println(area->y2);
 
     lcd.startWrite();
     lcd.setAddrWindow(area->x1, area->y1, w, h);
@@ -28,26 +23,35 @@ void UserInterface::display_flush(lv_disp_drv_t *disp, const lv_area_t *area, lv
 /*** Touchpad callback to read the touchpad ***/
 void UserInterface::touchpad_read(lv_indev_drv_t *indev_driver, lv_indev_data_t *data)
 {
-    int touchPosition[2] = {0, 0};
-    int touched = ft6236_pos(touchPosition);
+    lgfx::touch_point_t tp;
+    int touched = lcd.getTouch(&tp);
 
     if (touched == 1)
     {
-        int touch_x = touchPosition[1];
-        int touch_y = SCREEN_HEIGHT - touchPosition[0];
-
         data->state = LV_INDEV_STATE_PR;
 
+        int touch_x = tp.x;
+        int touch_y = tp.y;
+
+        // calibrate for touch extents
+        int calibrated_x = 1.0 * (touch_x - TOUCH_X_MIN) / (TOUCH_X_MAX - TOUCH_X_MIN) * SCREEN_WIDTH;
+        calibrated_x = max(0, calibrated_x);
+        calibrated_x = min(SCREEN_WIDTH, calibrated_x);
+        int calibrated_y = 1.0 * (touch_y - TOUCH_Y_MIN) / (TOUCH_Y_MAX - TOUCH_Y_MIN) * SCREEN_HEIGHT;
+        calibrated_y = max(0, calibrated_y);
+        calibrated_y = min(SCREEN_HEIGHT, calibrated_y);
+
         /*Set the coordinates*/
-        data->point.x = touch_x;
-        data->point.y = touch_y;
+        data->point.x = calibrated_x;
+        data->point.y = calibrated_y;
+
+        lv_obj_align(led1, LV_ALIGN_TOP_LEFT, calibrated_x, calibrated_y);
+        lv_led_on(led1);
 
         // Print coordinates, for debugging
-        // Serial.print("(");
-        // Serial.print(touch_x);
-        // Serial.print(" | ");
-        // Serial.print(touch_y);
-        // Serial.println(")");
+        // Serial.println("True  = (" + String(touch_x) + " | " + String(touch_y) + ")");
+        // Serial.println("Calib = [" + String(calibrated_x) + " | " + String(calibrated_y) + "]");
+        // Serial.println("-----");
     }
     else
     {
@@ -99,23 +103,61 @@ void UserInterface::setup_lovyan_GFX()
     lcd.init();
     lcd.setRotation(1); // Rotate to landscape
 
-    // Set up touch I2C initerface
-    Wire.begin(I2C_SDA, I2C_SCL);
-    byte error, address;
-    Wire.beginTransmission(TOUCH_I2C_ADD);
-    error = Wire.endTransmission();
-
-    if (error == 0)
-    {
-        Serial.print("I2C device found at address 0x");
-        Serial.print(TOUCH_I2C_ADD, HEX);
-        Serial.println("  !");
-    }
-    else
-    {
-        Serial.print("Unknown error at address 0x");
-        Serial.println(TOUCH_I2C_ADD, HEX);
-    }
-
     Serial.println("Completed setting up LovyanGFX");
+}
+
+void UserInterface::setup_ui()
+{
+
+    auto screen = lv_scr_act();
+    lv_obj_set_style_bg_color(screen, lv_color_hex(0x006666), LV_PART_MAIN);
+
+    auto touchPanel = lv_obj_create(screen);
+    lv_obj_set_width(touchPanel, 480);
+    lv_obj_set_height(touchPanel, 320);
+    lv_obj_set_style_bg_opa(touchPanel, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_clear_flag(touchPanel, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_set_style_pad_left(touchPanel, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_right(touchPanel, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_top(touchPanel, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_bottom(touchPanel, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    led1 = lv_led_create(touchPanel);
+    lv_obj_align(led1, LV_ALIGN_TOP_LEFT, 20, 20);
+    lv_obj_clear_flag(led1, LV_OBJ_FLAG_CLICKABLE);
+    lv_led_set_color(led1, lv_palette_main(LV_PALETTE_RED));
+    lv_led_off(led1);
+
+    auto widgetPanel = lv_obj_create(screen);
+    lv_obj_set_width(widgetPanel, 480);
+    lv_obj_set_height(widgetPanel, 320);
+    lv_obj_set_style_bg_opa(widgetPanel, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_flex_flow(widgetPanel, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_flex_align(widgetPanel, LV_FLEX_ALIGN_SPACE_BETWEEN, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_SPACE_BETWEEN);
+    lv_obj_set_style_pad_left(widgetPanel, 30, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_right(widgetPanel, 30, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_top(widgetPanel, 30, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_bottom(widgetPanel, 30, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    lv_obj_t *titleLabel = lv_label_create(widgetPanel);
+    lv_label_set_text(titleLabel, "Hello MakerFab LVGL");
+    lv_obj_set_style_text_font(titleLabel, &lv_font_montserrat_24, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(titleLabel, lv_color_hex(0xFFFFFF), LV_PART_MAIN);
+
+    counterLabel = lv_label_create(widgetPanel);
+    lv_label_set_text(counterLabel, String(counter).c_str());
+    lv_obj_set_style_text_font(counterLabel, &lv_font_montserrat_24, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(counterLabel, lv_color_hex(0xFFFFFF), LV_PART_MAIN);
+
+    lv_obj_t *button = lv_btn_create(widgetPanel);
+    lv_obj_add_event_cb(button, increment_counter, LV_EVENT_CLICKED, NULL);
+    lv_obj_t *buttonLabel = lv_label_create(button);
+    lv_label_set_text(buttonLabel, "Increment");
+    lv_obj_set_style_text_font(buttonLabel, &lv_font_montserrat_24, LV_PART_MAIN | LV_STATE_DEFAULT);
+}
+
+void UserInterface::increment_counter(lv_event_t *event)
+{
+    counter++;
+    lv_label_set_text(counterLabel, String(counter).c_str());
 }

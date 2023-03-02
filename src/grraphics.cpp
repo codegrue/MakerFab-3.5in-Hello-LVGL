@@ -1,6 +1,5 @@
 
 #include "graphics.h"
-#include <Wire.h>
 
 LGFX::LGFX(void)
 {
@@ -55,6 +54,18 @@ LGFX::LGFX(void)
   panel.rgb_order = false;            // Set to true if the panel's red and blue are swapped
   panel.dlen_16bit = true;            // Set to true for panels that send data length in 16-bit units
   panel.bus_shared = true;            // If the bus is shared with the SD card, set to true (bus control with drawJpgFile etc.)
+
+  auto cfg = touch_instance.config();
+  cfg.i2c_port = 1;
+  cfg.i2c_addr = TOUCH_I2C_ADD;
+  cfg.pin_sda = I2C_SDA;
+  cfg.pin_scl = I2C_SCL;
+  cfg.x_min = 0;
+  cfg.x_max = SCREEN_HEIGHT;
+  cfg.y_min = 0;
+  cfg.y_max = SCREEN_WIDTH;
+  touch_instance.config(cfg);
+  _panel_instance.touch(&touch_instance);
 
   _panel_instance.config(panel);
   setPanel(&_panel_instance); // Sets the panel to use.
