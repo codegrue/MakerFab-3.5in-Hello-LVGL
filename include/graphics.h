@@ -2,9 +2,11 @@
 #include <LovyanGFX.hpp>
 #include <LVGL.h>
 
+// LCD panel pins
 #define LCD_CS 37
 #define LCD_BLK 45
 
+// Touch panel pins
 #define TOUCH_I2C_ADD 0x38
 #define I2C_SCL 39
 #define I2C_SDA 38
